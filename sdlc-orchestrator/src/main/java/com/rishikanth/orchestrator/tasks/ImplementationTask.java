@@ -1,6 +1,7 @@
 package com.rishikanth.orchestrator.tasks;
 
 import com.rishikanth.orchestrator.model.*;
+import com.rishikanth.orchestrator.policy.ChangeControlPolicy;
 import com.rishikanth.orchestrator.policy.PathGuardrail;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -63,17 +64,21 @@ public class ImplementationTask implements StageTask {
     }
 
     private TaskResult generateRateLimiter(WorkflowInstance instance) {
+        boolean changeControlApproved = "true".equals(instance.getContext().get("changeControlApproved"));
         try {
             Path filterDir = PathGuardrail.enforce(targetRepoRoot,
                     targetRepoRoot.resolve("src/main/java/com/rishikanth/linkforge/filter"));
+            ChangeControlPolicy.enforce(targetRepoRoot, filterDir, changeControlApproved);
             Files.createDirectories(filterDir);
 
             Path exceptionFile = PathGuardrail.enforce(targetRepoRoot,
                     filterDir.resolve("../exception/RateLimitExceededException.java").normalize());
+            ChangeControlPolicy.enforce(targetRepoRoot, exceptionFile, changeControlApproved);
             Files.createDirectories(exceptionFile.getParent());
             Files.writeString(exceptionFile, RATE_LIMIT_EXCEPTION_SOURCE);
 
             Path filterFile = PathGuardrail.enforce(targetRepoRoot, filterDir.resolve("RateLimitFilter.java"));
+            ChangeControlPolicy.enforce(targetRepoRoot, filterFile, changeControlApproved);
             Files.writeString(filterFile, RATE_LIMIT_FILTER_SOURCE);
 
             String output = "Generated " + filterFile + " and " + exceptionFile;
@@ -81,10 +86,14 @@ public class ImplementationTask implements StageTask {
             instance.getContext().put("generatedFiles", filterFile + "," + exceptionFile);
             instance.getContext().recordDecision(Stage.IMPLEMENTATION, output,
                     "Implemented as a standalone servlet Filter + exception type; no existing " +
-                    "service/repository/entity classes touched (see DESIGN decision).", Actor.AGENT);
+                    "service/repository/entity classes touched (see DESIGN decision). Both a " +
+                    "path-containment guardrail and a change-control policy check were evaluated " +
+                    "before any file was written.", Actor.AGENT);
             return TaskResult.success(output);
         } catch (PathGuardrail.PolicyViolationException e) {
-            return TaskResult.failure("Policy guardrail blocked write: " + e.getMessage());
+            return TaskResult.failure("Path guardrail blocked write: " + e.getMessage());
+        } catch (ChangeControlPolicy.ChangeControlViolationException e) {
+            return TaskResult.failure("Change-control policy blocked write: " + e.getMessage());
         } catch (IOException e) {
             return TaskResult.failure("File write failed: " + e.getMessage());
         }

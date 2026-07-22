@@ -52,7 +52,7 @@ class WorkflowEngineTest {
     @Test
     void greenfieldScenario_failsFastOnMissingArtifacts_andSafeStops() throws InterruptedException {
         WorkflowInstance instance = engine.startWorkflow(ScenarioType.GREENFIELD,
-                "Build a URL shortener from scratch", false);
+                "Build a URL shortener from scratch", false, false);
 
         waitUntil(() -> engine.get(instance.getId()).getStatus() == WorkflowStatus.SAFE_STOPPED, 5000);
 
@@ -67,7 +67,7 @@ class WorkflowEngineTest {
     @Test
     void ambiguousScenario_blocksForClarification_thenReplansAndReachesApprovalGate() throws InterruptedException {
         WorkflowInstance instance = engine.startWorkflow(ScenarioType.AMBIGUOUS,
-                "Make the shortener more reliable", false);
+                "Make the shortener more reliable", false, false);
 
         waitUntil(() -> engine.get(instance.getId()).getNodeStates().get("requirements").getStatus()
                 == NodeStatus.BLOCKED_CLARIFICATION, 5000);
@@ -97,7 +97,7 @@ class WorkflowEngineTest {
     @Test
     void brownfieldScenario_withSimulatedReleaseFailure_rollsBackManifest() throws InterruptedException {
         WorkflowInstance instance = engine.startWorkflow(ScenarioType.BROWNFIELD,
-                "Add rate limiting to protect against abuse", true);
+                "Add rate limiting to protect against abuse", true, false);
 
         waitUntil(() -> engine.get(instance.getId()).getNodeStates().get("release").getStatus()
                 == NodeStatus.AWAITING_APPROVAL, 8000);

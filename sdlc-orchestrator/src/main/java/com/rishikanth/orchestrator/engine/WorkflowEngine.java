@@ -37,12 +37,16 @@ public class WorkflowEngine {
         this.retryBackoffMs = retryBackoffMs;
     }
 
-    public WorkflowInstance startWorkflow(ScenarioType scenario, String requirementText, boolean simulateReleaseFailure) {
+    public WorkflowInstance startWorkflow(ScenarioType scenario, String requirementText,
+                                           boolean simulateReleaseFailure, boolean changeControlApproved) {
         String id = UUID.randomUUID().toString().substring(0, 8);
         WorkflowInstance instance = new WorkflowInstance(id, scenario, graphFactory.build(scenario));
         instance.getContext().put("requirementText", requirementText);
         if (simulateReleaseFailure) {
             instance.getContext().put("simulateReleaseFailure", "true");
+        }
+        if (changeControlApproved) {
+            instance.getContext().put("changeControlApproved", "true");
         }
         instances.put(id, instance);
         advance(instance);

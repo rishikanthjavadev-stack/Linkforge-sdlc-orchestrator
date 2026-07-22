@@ -29,7 +29,9 @@ Tests use a JUnit `@TempDir` as an isolated target repo (not your real
 LinkForge checkout), so they're safe to run repeatedly without side
 effects on your actual project. Covers:
 - `GraphFactoryTest` — graph shape, parallel branches, join point
-- `PathGuardrailTest` — write-path policy enforcement (allow + block)
+- `PathGuardrailTest` — write-path containment enforcement (allow + block)
+- `ChangeControlPolicyTest` — protected-path change-control enforcement
+  (allow + block, plus authorized-override)
 - `WorkflowEngineTest` — all three scenario behaviors end-to-end,
   including the ambiguity block/clarify/re-plan path and the
   approve/rollback path
@@ -37,7 +39,7 @@ effects on your actual project. Covers:
 ## API quick reference
 | Method | Path | Purpose |
 |---|---|---|
-| POST | `/workflows` | Start a workflow (`scenario`, `requirementText`, optional `simulateReleaseFailure`) |
+| POST | `/workflows` | Start a workflow (`scenario`, `requirementText`, optional `simulateReleaseFailure`, optional `changeControlApproved`) |
 | GET | `/workflows` | List all workflow instances |
 | GET | `/workflows/{id}` | Full state: nodes, context, decision lineage |
 | POST | `/workflows/{id}/nodes/{nodeId}/approve` | Approve a high-impact node (e.g. `release`) |

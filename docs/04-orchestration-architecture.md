@@ -108,14 +108,31 @@ It holds two distinct things:
   proven by `WorkflowEngineTest.greenfieldScenario_failsFastOnMissingArtifacts_andSafeStops`.
 
 ## Policy Guardrails
-`PathGuardrail.enforce()` is a real filesystem check (not a comment): it
-canonicalizes both the allowed repo root and the candidate write path and
-verifies the candidate is actually a descendant of the root. Every file
-write in `ImplementationTask`, `DocumentationTask`, and `ReleaseTask`
-routes through this check first, so a future task implementation with a
-path-traversal bug (e.g. a generated filename containing `../../`) is
-blocked at the guardrail rather than silently escaping the sanctioned
-repo directory. `PathGuardrailTest` proves both the allow and block paths.
+Two guardrails exist, each answering a different question - deliberately
+kept as separate mechanisms rather than one blended check, since they
+protect against different failure modes:
+
+- **`PathGuardrail`** (containment/security): is this write physically
+  confined to the sanctioned repository, even after resolving symlinks?
+  Real filesystem check, not a comment - canonicalizes both the allowed
+  root and the candidate path and verifies a true prefix relationship.
+  Blocks path-traversal-style escapes (e.g. a generated filename
+  containing `../../`).
+- **`ChangeControlPolicy`** (change management): even for a write that's
+  safely inside the repo, is this a path an autonomous agent should be
+  allowed to touch without extra human sign-off? A fixed list of
+  protected paths - `pom.xml` and the domain layer (`model/`, `service/`,
+  `repository/`) - requires an explicit `changeControlApproved` flag on
+  the workflow before any write there is allowed. `ImplementationTask`
+  evaluates this before every generated-file write; in the current
+  brownfield scenario the generated filter/exception files fall outside
+  the protected list, so the check passes without requiring approval -
+  proving the guardrail doesn't obstruct legitimate low-risk changes
+  while still standing ready to block a higher-risk one.
+
+Both guardrails are unit-tested in isolation (`PathGuardrailTest`,
+`ChangeControlPolicyTest`) covering both their allow and block paths,
+independent of any specific task or scenario.
 
 ## Audit-Grade Observability
 Every state transition — human or system-caused — appends an immutable

@@ -25,7 +25,8 @@ public class WorkflowController {
     @PostMapping
     public ResponseEntity<WorkflowView> start(@Valid @RequestBody StartWorkflowRequest request) {
         WorkflowInstance instance = engine.startWorkflow(
-                request.getScenario(), request.getRequirementText(), request.isSimulateReleaseFailure());
+                request.getScenario(), request.getRequirementText(),
+                request.isSimulateReleaseFailure(), request.isChangeControlApproved());
         return ResponseEntity.status(HttpStatus.CREATED).body(WorkflowView.of(instance));
     }
 
