@@ -1,0 +1,13 @@
+server:
+  port: 8081
+
+spring:
+  application:
+    name: sdlc-orchestrator
+
+# Path to the LinkForge repo this orchestrator drives real actions against.
+# Override with --orchestrator.target-repo=/path/to/linkforge if different.
+orchestrator:
+  target-repo: ../linkforge
+  max-retries: 3
+  retry-backoff-ms: 500
